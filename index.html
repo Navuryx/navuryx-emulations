@@ -110,7 +110,7 @@
         <div class="cta">
           <a class="btn btn-primary" href="https://github.com/Navuryx/navuryx-emulations/releases/latest/download/Navuryx-Emulations-Windows.zip">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 20h16"/></svg>
-            Download for Windows (5.9 MB)
+            Download for Windows (6.1 MB)
           </a>
           <a class="btn btn-ghost" href="play/index.html">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -134,8 +134,8 @@
         <div class="card"><div class="dot">X</div><h3>Xbox One &amp; Series X|S</h3><p>Dual Native Mode (SEH unwind, DLL redirection, GDK/XDK/D3D12.X shims, persistent XGameSave) and live Emulator Mode (x86-64 + SSE2/BMI2, Era memory, XInput &amp; audio).</p></div>
         <div class="card"><div class="dot">P</div><h3>PlayStation 4 &amp; 5</h3><p>Live x86-64/AVX Emulator Core with VideoOut, sceAudioOut PCM audio, FIOS VFS &amp; Remote Play, plus Native Mode with an in-place x86-64 <code>fs:</code> TLS &amp; stack-canary binary relinker.</p></div>
         <div class="card"><div class="dot">S</div><h3>Switch &amp; Apple iOS</h3><p>Live ARM64+NEON Switch core with NCA decryption, RomFS, HID input &amp; audout audio, plus live ARM64e iOS XNU kernel bring-up with 16 KB MMU &amp; S5L UART0 console.</p></div>
-        <div class="card"><div class="dot">▣</div><h3>Multi-OS Virtual Machines</h3><p>Built-in x86-64 PC engine with VGA/VESA, IDE/ATAPI &amp; BIOS, plus ready templates for Arch Linux, Alpine Linux, FreeDOS, Android Phone/Tablet, Windows &amp; custom ISOs.</p></div>
-        <div class="card"><div class="dot">◎</div><h3>Console Mode &amp; Controllers</h3><p>Full couch-friendly Console Mode UI, Xbox / PlayStation / Switch Pro auto-detection, per-game button remapping, save slots, and live rewind.</p></div>
+        <div class="card"><div class="dot">▣</div><h3>Multi-OS &amp; Android Virtual Machines</h3><p>Built-in x86 PC engine for Arch, Alpine, FreeDOS, Windows, Android-x86 &amp; Bliss OS, plus an instant Android 14 Phone/Tablet APK Runner with touch navigation, rotation, and Dalvik VM.</p></div>
+        <div class="card"><div class="dot">◎</div><h3>Handhelds, Dual-Screen &amp; Classics</h3><p>Custom cores for PSP, PlayStation Vita, Nintendo 3DS, Nintendo DS, Wii U, Wii, Sega Dreamcast, Saturn, Neo Geo AES/MVS &amp; PS3 — with live touchscreen pointer &amp; controller auto-detection.</p></div>
         <div class="card"><div class="dot">★</div><h3>Play Online in Browser</h3><p>Classic console cores compile straight to WebAssembly so you can test and play right inside your browser with zero install.</p></div>
       </div>
     </div>
@@ -158,8 +158,12 @@
           <tr><td>PlayStation 4 &amp; PlayStation 5</td><td class="exp">Live Emulator + Native Relinker</td><td>Decrypted eboot.bin, .elf, .oelf, .self, Remote Play</td></tr>
           <tr><td>Nintendo Switch</td><td class="exp">Live ARM64+NEON Core</td><td>.nsp, .xci (with your prod.keys)</td></tr>
           <tr><td>Apple iPhone / iOS</td><td class="exp">Live ARM64e XNU Core</td><td>.ipsw, .ipa</td></tr>
-          <tr><td>Original Xbox, Xbox 360 &amp; PlayStation 2</td><td class="exp">Live Experimental Cores</td><td>.xbe, .xiso, .xex, .iso (with your BIOS)</td></tr>
-          <tr><td>Virtual Machines (Linux, Windows, FreeDOS, Android, BSD)</td><td class="ok">Built-in x86-64 PC Core</td><td>.iso, .img, .qcow2</td></tr>
+          <tr><td>PSP / PSP Go &amp; PlayStation Vita</td><td class="exp">Live Allegrex MIPS &amp; ARMv7 Cores</td><td>.pbp, .iso, .cso, .vpk, .velf, .elf</td></tr>
+          <tr><td>Nintendo 3DS / 2DS &amp; Nintendo DS / DSi</td><td class="exp">Live Dual-Screen ARM Cores + Touch</td><td>.3dsx, .3ds, .cci, .cia, .nds, .dsi</td></tr>
+          <tr><td>Nintendo Wii U &amp; Nintendo Wii</td><td class="exp">Live Espresso / Broadway PPC Cores</td><td>.rpx, .wua, .wud, .wux, .dol, .iso, .wbfs</td></tr>
+          <tr><td>Sega Dreamcast, Saturn &amp; Neo Geo AES/MVS</td><td class="exp">Live SH-4, SH-2 &amp; M68K Cores</td><td>.gdi, .cdi, .chd, .neo, .zip, .elf</td></tr>
+          <tr><td>Original Xbox, Xbox 360, PS2 &amp; PlayStation 3</td><td class="exp">Live Experimental Cores</td><td>.xbe, .xiso, .xex, .iso, .elf (with your BIOS)</td></tr>
+          <tr><td>Android Devices &amp; Multi-OS Virtual Machines</td><td class="ok">Android 14 APK Runner + Built-in x86 PC Core</td><td>.apk, .iso, .img, .qcow2 (Android-x86, Bliss OS, Linux, Windows, FreeDOS)</td></tr>
         </tbody>
       </table>
     </div>
@@ -192,7 +196,7 @@
   <section class="download">
     <div class="wrap">
       <h2>Ready to play?</h2>
-      <p class="sub" style="margin:0 auto 32px">Navuryx Emulations v0.1.0 for Windows 64-bit · 5.9 MB</p>
+      <p class="sub" style="margin:0 auto 32px">Navuryx Emulations v0.1.0 for Windows 64-bit · 6.1 MB</p>
       <div class="cta" style="justify-content:center">
         <a class="btn btn-primary" href="https://github.com/Navuryx/navuryx-emulations/releases/latest/download/Navuryx-Emulations-Windows.zip">Download Navuryx Emulations</a>
         <a class="btn btn-ghost" href="https://github.com/Navuryx/navuryx-emulations/releases" target="_blank" rel="noopener">All Releases</a>
