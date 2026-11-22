@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Navuryx Emulations — Multi-System Console Emulator &amp; Virtual Machines</title>
+<meta name="description" content="Navuryx Emulations runs Xbox One / Series X|S, PlayStation 4 &amp; 5, Nintendo Switch, iPhone / iOS, Xbox 360, PS2, classic consoles, and multi-OS virtual machines on custom C++ &amp; Rust cores.">
+<link rel="icon" href="logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --primary: #4169E1;
+    --secondary: #7851A9;
+    --bg: #07070b;
+    --panel: #0e0e15;
+    --line: #1d1d29;
+    --text: #ececf3;
+    --muted: #9696a8;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: Inter, "Segoe UI", system-ui, sans-serif; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 0 24px; }
+
+  header { position: sticky; top: 0; z-index: 10; background: rgba(7,7,11,.85); backdrop-filter: blur(10px); border-bottom: 1px solid var(--line); }
+  header .wrap { display: flex; align-items: center; justify-content: space-between; height: 64px; gap: 16px; }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 18px; letter-spacing: -.01em; }
+  .brand img { width: 30px; height: 30px; border-radius: 8px; }
+  .brand span { color: var(--muted); font-weight: 500; }
+  nav { display: flex; gap: 24px; font-size: 14px; color: var(--muted); }
+  nav a:hover { color: var(--text); }
+
+  .hero { padding: 92px 0 72px; position: relative; overflow: hidden; }
+  .hero::before { content: ""; position: absolute; inset: -30% -10% auto; height: 540px; background: radial-gradient(closest-side, color-mix(in srgb, var(--primary) 30%, transparent), transparent 70%), radial-gradient(closest-side at 70% 40%, color-mix(in srgb, var(--secondary) 24%, transparent), transparent 70%); pointer-events: none; }
+  .hero .wrap { position: relative; display: grid; grid-template-columns: 1.25fr .75fr; gap: 48px; align-items: center; }
+  .eyebrow { display: inline-block; font-size: 13px; font-weight: 600; color: var(--primary); border: 1px solid color-mix(in srgb, var(--primary) 45%, transparent); padding: 4px 12px; border-radius: 99px; margin-bottom: 22px; }
+  h1 { font-size: clamp(36px, 5.6vw, 60px); line-height: 1.05; letter-spacing: -.035em; font-weight: 800; }
+  h1 em { font-style: normal; background: linear-gradient(90deg, var(--primary), var(--secondary)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .lead { font-size: 17.5px; color: var(--muted); margin: 22px 0 34px; max-width: 560px; }
+  .cta { display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+  .btn { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; font-size: 15px; padding: 14px 22px; border-radius: 12px; transition: transform .15s, box-shadow .15s, border-color .15s; }
+  .btn-primary { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; box-shadow: 0 10px 30px -10px var(--primary); }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 14px 34px -10px var(--primary); }
+  .btn-ghost { border: 1px solid var(--line); color: var(--text); background: rgba(255,255,255,.02); }
+  .btn-ghost:hover { border-color: var(--muted); transform: translateY(-1px); }
+  .tabs { display: flex; gap: 4px; background: var(--panel); border: 1px solid var(--line); padding: 4px; border-radius: 12px; }
+  .tabs a { padding: 7px 14px; border-radius: 9px; font-size: 13.5px; font-weight: 600; color: var(--muted); }
+  .tabs a.on { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: #fff; }
+  .tabs a:not(.on):hover { color: var(--text); }
+  .meta { font-size: 13px; color: var(--muted); margin-top: 14px; }
+  .meta a { color: var(--text); text-decoration: underline; text-underline-offset: 3px; }
+  .mark { justify-self: center; width: min(300px, 68vw); aspect-ratio: 1; border-radius: 28%; box-shadow: 0 40px 90px -30px color-mix(in srgb, var(--primary) 60%, transparent); }
+
+  section { padding: 76px 0; border-top: 1px solid var(--line); }
+  h2 { font-size: 32px; letter-spacing: -.02em; font-weight: 800; margin-bottom: 10px; }
+  .sub { color: var(--muted); margin-bottom: 36px; max-width: 660px; }
+  .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 24px; }
+  .card h3 { font-size: 16px; margin-bottom: 6px; }
+  .card p { color: var(--muted); font-size: 14px; }
+  .dot { width: 34px; height: 34px; border-radius: 10px; margin-bottom: 16px; background: linear-gradient(135deg, color-mix(in srgb, var(--primary) 30%, transparent), color-mix(in srgb, var(--secondary) 30%, transparent)); border: 1px solid color-mix(in srgb, var(--primary) 40%, transparent); display: grid; place-items: center; font-size: 15px; font-weight: 800; color: var(--text); }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+  th, td { text-align: left; padding: 13px 16px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; font-size: 13px; }
+  .ok { color: #4ade80; font-weight: 600; }
+  .exp { color: #60a5fa; font-weight: 600; }
+
+  .steps { counter-reset: s; display: grid; gap: 14px; }
+  .steps li { list-style: none; counter-increment: s; background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px 18px 64px; position: relative; color: var(--muted); }
+  .steps li strong { color: var(--text); }
+  .steps li::before { content: counter(s); position: absolute; left: 20px; top: 16px; width: 28px; height: 28px; border-radius: 8px; background: var(--primary); color: #fff; font-weight: 700; display: grid; place-items: center; font-size: 14px; }
+
+  details { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; margin-bottom: 10px; }
+  summary { cursor: pointer; font-weight: 600; }
+  details p { color: var(--muted); margin-top: 10px; }
+
+  .download { text-align: center; }
+  .download .btn { font-size: 17px; padding: 18px 32px; }
+  footer { border-top: 1px solid var(--line); padding: 32px 0; color: var(--muted); font-size: 13px; }
+  footer .wrap { display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap; }
+
+  @media (max-width: 820px) {
+    .hero .wrap { grid-template-columns: 1fr; }
+    .mark { width: 180px; order: -1; justify-self: start; }
+    .grid { grid-template-columns: 1fr; }
+    nav { display: none; }
+    th:nth-child(3), td:nth-child(3) { display: none; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <a class="brand" href="#"><img src="logo.png" alt="">Navuryx <span>Emulations</span></a>
+    <nav><a href="#features">Features</a><a href="#consoles">Consoles &amp; OS</a><a href="#start">Get started</a><a href="#faq">FAQ</a></nav>
+    <div class="tabs"><a class="on" href="index.html">Download</a><a href="play/index.html">Play Online</a><a href="https://github.com/Navuryx/navuryx-emulations/releases" target="_blank" rel="noopener">Releases</a></div>
+  </div>
+</header>
+
+<main>
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <span class="eyebrow">Free for Windows · Version 0.1.0</span>
+        <h1>Every console &amp; OS,<br><em>one clean-room app.</em></h1>
+        <p class="lead">Navuryx Emulations runs Xbox One / Series X|S, PlayStation 4 &amp; 5 (Emulator &amp; Native Binary Relinker), Nintendo Switch, Apple iOS XNU, Xbox 360, PS2, 16 classic consoles, and multi-OS virtual machines — built from scratch in Rust and C++.</p>
+        <div class="cta">
+          <a class="btn btn-primary" href="https://github.com/Navuryx/navuryx-emulations/releases/latest/download/Navuryx-Emulations-Windows.zip">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 20h16"/></svg>
+            Download for Windows (5.9 MB)
+          </a>
+          <a class="btn btn-ghost" href="play/index.html">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+            Play Online (WASM)
+          </a>
+          <a class="btn btn-ghost" href="https://github.com/Navuryx/navuryx-emulations/releases" target="_blank" rel="noopener">
+            GitHub Releases
+          </a>
+        </div>
+        <p class="meta">Windows 10 / 11 (64-bit) · Portable zip · Includes Game Dump Helper · <a href="ios.html">iOS Web Runner</a></p>
+      </div>
+      <img class="mark" src="logo.png" alt="Navuryx Emulations logo">
+    </div>
+  </div>
+
+  <section id="features">
+    <div class="wrap">
+      <h2>100% Built From Scratch</h2>
+      <p class="sub">Every CPU core, OS runtime, binary relinker, graphics bridge, and virtual machine subsystem is written cleanly in C++ and Rust.</p>
+      <div class="grid">
+        <div class="card"><div class="dot">X</div><h3>Xbox One &amp; Series X|S</h3><p>Dual Native Mode (SEH unwind, DLL redirection, GDK/XDK/D3D12.X shims, persistent XGameSave) and live Emulator Mode (x86-64 + SSE2/BMI2, Era memory, XInput &amp; audio).</p></div>
+        <div class="card"><div class="dot">P</div><h3>PlayStation 4 &amp; 5</h3><p>Live x86-64/AVX Emulator Core with VideoOut, sceAudioOut PCM audio, FIOS VFS &amp; Remote Play, plus Native Mode with an in-place x86-64 <code>fs:</code> TLS &amp; stack-canary binary relinker.</p></div>
+        <div class="card"><div class="dot">S</div><h3>Switch &amp; Apple iOS</h3><p>Live ARM64+NEON Switch core with NCA decryption, RomFS, HID input &amp; audout audio, plus live ARM64e iOS XNU kernel bring-up with 16 KB MMU &amp; S5L UART0 console.</p></div>
+        <div class="card"><div class="dot">▣</div><h3>Multi-OS Virtual Machines</h3><p>Built-in x86-64 PC engine with VGA/VESA, IDE/ATAPI &amp; BIOS, plus ready templates for Arch Linux, Alpine Linux, FreeDOS, Android Phone/Tablet, Windows &amp; custom ISOs.</p></div>
+        <div class="card"><div class="dot">◎</div><h3>Console Mode &amp; Controllers</h3><p>Full couch-friendly Console Mode UI, Xbox / PlayStation / Switch Pro auto-detection, per-game button remapping, save slots, and live rewind.</p></div>
+        <div class="card"><div class="dot">★</div><h3>Play Online in Browser</h3><p>Classic console cores compile straight to WebAssembly so you can test and play right inside your browser with zero install.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="consoles">
+    <div class="wrap">
+      <h2>Supported Consoles &amp; Operating Systems</h2>
+      <p class="sub">Classic consoles are fully playable today; next-gen consoles and mobile/desktop OS cores run live in Experimental mode with active development.</p>
+      <table>
+        <thead><tr><th>System</th><th>Status</th><th>Supported Formats</th></tr></thead>
+        <tbody>
+          <tr><td>NES / Famicom / FDS</td><td class="ok">Playable</td><td>.nes, .fds, .zip</td></tr>
+          <tr><td>Super Nintendo (SNES + Super FX)</td><td class="ok">Playable</td><td>.sfc, .smc, .zip</td></tr>
+          <tr><td>Game Boy / Color &amp; Game Boy Advance</td><td class="ok">Playable (no BIOS needed)</td><td>.gb, .gbc, .gba, .zip</td></tr>
+          <tr><td>Nintendo 64 &amp; GameCube</td><td class="ok">Playable</td><td>.z64, .n64, .v64, .dol, .iso, .gcm</td></tr>
+          <tr><td>PlayStation 1</td><td class="ok">Playable (needs your BIOS)</td><td>.cue, .bin, .iso, .exe</td></tr>
+          <tr><td>Sega SMS / Genesis / Game Gear, Atari 2600/7800, PCE, WonderSwan, Intellivision, Virtual Boy</td><td class="ok">Playable</td><td>.sms, .md, .gg, .a26, .a78, .pce, .ws, .vb, .zip</td></tr>
+          <tr><td>Xbox One / Series X|S</td><td class="exp">Live Emulator + Native Mode</td><td>Decrypted folders, MicrosoftGame.config, .msix/.msixbundle</td></tr>
+          <tr><td>PlayStation 4 &amp; PlayStation 5</td><td class="exp">Live Emulator + Native Relinker</td><td>Decrypted eboot.bin, .elf, .oelf, .self, Remote Play</td></tr>
+          <tr><td>Nintendo Switch</td><td class="exp">Live ARM64+NEON Core</td><td>.nsp, .xci (with your prod.keys)</td></tr>
+          <tr><td>Apple iPhone / iOS</td><td class="exp">Live ARM64e XNU Core</td><td>.ipsw, .ipa</td></tr>
+          <tr><td>Original Xbox, Xbox 360 &amp; PlayStation 2</td><td class="exp">Live Experimental Cores</td><td>.xbe, .xiso, .xex, .iso (with your BIOS)</td></tr>
+          <tr><td>Virtual Machines (Linux, Windows, FreeDOS, Android, BSD)</td><td class="ok">Built-in x86-64 PC Core</td><td>.iso, .img, .qcow2</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="start">
+    <div class="wrap">
+      <h2>Get started</h2>
+      <p class="sub">Up and running in under a minute — no installer required.</p>
+      <ol class="steps">
+        <li><strong>Download and unzip.</strong> Extract <code>Navuryx-Emulations-Windows.zip</code> anywhere on your Windows 10/11 PC.</li>
+        <li><strong>Open Navuryx Emulations.exe.</strong> If Windows SmartScreen appears, click <em>More info</em>, then <em>Run anyway</em>.</li>
+        <li><strong>Add your games or ISOs.</strong> Pick any console in Games, switch to Console Mode, or create a Virtual Machine in the VMs / Devices tabs.</li>
+        <li><strong>Play.</strong> Plug in any Xbox, PlayStation, or Switch Pro controller, or customize keyboard controls in Settings.</li>
+      </ol>
+    </div>
+  </section>
+
+  <section id="faq">
+    <div class="wrap">
+      <h2>Questions</h2>
+      <p class="sub">&nbsp;</p>
+      <details><summary>Is it free?</summary><p>Yes. Navuryx Emulations is free for Windows, and includes the WebAssembly browser player and Game Dump Helper.</p></details>
+      <details><summary>Where do I get BIOS, keys, or games?</summary><p>Only use games, ROMs, BIOS dumps, keys, firmware (.ipsw), and OS images from hardware you own or that are freely shared by their creators. None are bundled.</p></details>
+      <details><summary>How do Xbox One / Series X|S and PS5 Native vs Emulator modes work?</summary><p>In Settings you can toggle between Emulator mode (runs on our sandboxed x86-64 CPU core) and Native mode (runs decrypted x86-64 executables directly on Windows x64 with DLL redirection, our binary <code>fs:</code> TLS relinker, and clean-room system shims).</p></details>
+      <details><summary>Windows SmartScreen says the app is unrecognized</summary><p>Self-signed builds show this warning until signed with an EV certificate. Click <em>More info</em> and then <em>Run anyway</em>.</p></details>
+    </div>
+  </section>
+
+  <section class="download">
+    <div class="wrap">
+      <h2>Ready to play?</h2>
+      <p class="sub" style="margin:0 auto 32px">Navuryx Emulations v0.1.0 for Windows 64-bit · 5.9 MB</p>
+      <div class="cta" style="justify-content:center">
+        <a class="btn btn-primary" href="https://github.com/Navuryx/navuryx-emulations/releases/latest/download/Navuryx-Emulations-Windows.zip">Download Navuryx Emulations</a>
+        <a class="btn btn-ghost" href="https://github.com/Navuryx/navuryx-emulations/releases" target="_blank" rel="noopener">All Releases</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span>© 2026 Navuryx Emulations</span>
+    <span>Only use games, firmware, and OS images you legally own.</span>
+  </div>
+</footer>
+</body>
+</html>

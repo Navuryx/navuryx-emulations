@@ -1,0 +1,1044 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Navuryx iOS — Native Browser IPSW &amp; IPA Runner</title>
+<style>
+  :root {
+    --bg: #0b0d14;
+    --panel: #121622;
+    --surface: #1a2033;
+    --border: #27304a;
+    --primary: #4169E1;
+    --secondary: #7851A9;
+    --text: #eef2ff;
+    --muted: #94a3b8;
+    --ok: #34d399;
+    --warn: #fbbf24;
+    --err: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Segoe UI", Roboto, sans-serif;
+    background: radial-gradient(circle at 20% 0%, #171d36 0%, var(--bg) 55%);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 24px;
+    background: rgba(18, 22, 34, 0.92);
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-weight: 700;
+    font-size: 18px;
+    letter-spacing: -0.02em;
+  }
+  .brand-dot {
+    width: 12px; height: 12px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    box-shadow: 0 0 12px rgba(65, 105, 225, 0.7);
+  }
+  .badge {
+    font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 999px;
+    background: var(--surface); border: 1px solid var(--border); color: var(--muted);
+  }
+  .badge.ok { color: var(--ok); border-color: rgba(52, 211, 153, 0.35); }
+  main {
+    flex: 1;
+    display: grid;
+    grid-template-columns: 360px 1fr;
+    gap: 28px;
+    max-width: 1320px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 26px 24px 40px;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; justify-items: center; }
+  }
+
+  /* iPhone 14 Pro / Dynamic Island bezel */
+  .iphone {
+    width: 344px;
+    height: 700px;
+    border-radius: 52px;
+    background: #06070a;
+    padding: 12px;
+    border: 3px solid #2c3347;
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.65), inset 0 0 0 2px #141824;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+  }
+  .screen {
+    flex: 1;
+    border-radius: 40px;
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(160deg, #101830 0%, #1d1536 48%, #0a0e1a 100%);
+    display: flex;
+    flex-direction: column;
+    color: #fff;
+  }
+  .status-bar {
+    height: 44px;
+    padding: 12px 22px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 12px;
+    font-weight: 600;
+    z-index: 10;
+    position: relative;
+  }
+  .island {
+    position: absolute;
+    left: 50%; top: 10px;
+    transform: translateX(-50%);
+    width: 104px; height: 28px;
+    background: #000;
+    border-radius: 20px;
+    display: flex; align-items: center; justify-content: flex-end;
+    padding-right: 10px;
+    transition: width 0.25s ease;
+  }
+  .island-cam {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, #2a4a8a, #070b14 70%);
+    border: 1px solid #1c2338;
+  }
+  .screen-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    position: relative;
+  }
+  .view { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+  .view.active { display: flex; }
+
+  /* SpringBoard */
+  .sb-header {
+    padding: 14px 20px 8px;
+    text-align: center;
+  }
+  .sb-clock { font-size: 46px; font-weight: 700; letter-spacing: -0.03em; line-height: 1; }
+  .sb-sub { font-size: 12px; color: rgba(255,255,255,0.7); margin-top: 6px; }
+  .sb-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px 10px;
+    padding: 18px 18px;
+  }
+  .app-icon {
+    display: flex; flex-direction: column; align-items: center; gap: 5px;
+    cursor: pointer; user-select: none;
+    transition: transform 0.12s ease;
+  }
+  .app-icon:active { transform: scale(0.92); }
+  .app-tile {
+    width: 56px; height: 56px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 24px; font-weight: 700;
+    box-shadow: 0 8px 18px rgba(0,0,0,0.35);
+  }
+  .app-label { font-size: 11px; color: rgba(255,255,255,0.92); text-align: center; max-width: 66px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dock {
+    margin: auto 14px 16px;
+    padding: 10px 14px;
+    border-radius: 26px;
+    background: rgba(255,255,255,0.12);
+    backdrop-filter: blur(18px);
+    display: flex;
+    justify-content: space-around;
+  }
+  .home-bar {
+    height: 20px;
+    display: flex; align-items: center; justify-content: center;
+    cursor: pointer;
+  }
+  .home-pill {
+    width: 116px; height: 4px; border-radius: 99px;
+    background: rgba(255,255,255,0.65);
+  }
+
+  /* Verbose Boot / Console inside iPhone */
+  .ios-term {
+    flex: 1;
+    background: #020305;
+    color: #d8f8e1;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 10.5px;
+    line-height: 1.45;
+    padding: 10px 12px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .ios-app-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 8px 14px;
+    background: rgba(18, 22, 34, 0.95);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    font-size: 13px; font-weight: 600;
+  }
+  .ios-back {
+    color: #60a5fa; cursor: pointer; font-weight: 500; font-size: 12px;
+    background: none; border: none; padding: 2px 6px;
+  }
+  .ios-list {
+    flex: 1; overflow-y: auto; padding: 10px 12px;
+    background: #0d111d;
+    font-size: 12px;
+  }
+  .ios-row {
+    padding: 8px 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex; justify-content: space-between; gap: 8px;
+  }
+  .ios-row .k { color: var(--muted); }
+  .ios-row .v { color: var(--text); font-weight: 500; text-align: right; word-break: break-all; }
+
+  /* Right workspace panel */
+  .workspace {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    width: 100%;
+  }
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .card h2 {
+    font-size: 17px; margin-bottom: 4px; letter-spacing: -0.01em;
+  }
+  .card p.sub {
+    font-size: 13px; color: var(--muted); margin-bottom: 14px;
+  }
+  .dropzone {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 26px 20px;
+    text-align: center;
+    background: rgba(26, 32, 51, 0.45);
+    transition: border-color 0.15s, background 0.15s;
+    cursor: pointer;
+  }
+  .dropzone.over {
+    border-color: var(--primary);
+    background: rgba(65, 105, 225, 0.14);
+  }
+  .dropzone strong { display: block; font-size: 15px; margin-bottom: 6px; }
+  .dropzone span { font-size: 12.5px; color: var(--muted); }
+  .btn-row {
+    display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px;
+  }
+  button.btn {
+    border: none; border-radius: 9px; padding: 9px 15px;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+    color: #fff; background: var(--primary);
+    transition: filter 0.15s;
+  }
+  button.btn:hover { filter: brightness(1.12); }
+  button.btn.ghost {
+    background: var(--surface); border: 1px solid var(--border); color: var(--text);
+  }
+  .grid-2 {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px;
+  }
+  .stat {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; padding: 11px 13px;
+  }
+  .stat .label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat .val { font-size: 14px; font-weight: 600; margin-top: 3px; word-break: break-word; }
+  .log-box {
+    background: #07090f;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    font-size: 12px;
+    line-height: 1.5;
+    max-height: 260px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    color: #cbd5e1;
+  }
+  .file-table {
+    max-height: 220px; overflow-y: auto;
+    border: 1px solid var(--border); border-radius: 10px;
+    background: #0b0e17; font-size: 12px;
+  }
+  .file-item {
+    display: flex; justify-content: space-between; gap: 12px;
+    padding: 6px 12px; border-bottom: 1px solid rgba(255,255,255,0.04);
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  .file-item:last-child { border-bottom: none; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand">
+    <div class="brand-dot"></div>
+    <span>Navuryx iOS Web</span>
+    <span class="badge ok">Single-File HTML</span>
+    <span class="badge">ZIP64 IPSW + IPA + ARM32 Core</span>
+  </div>
+  <div class="badge" id="statusPill">Ready — drop an .ipsw or .ipa</div>
+</header>
+
+<main>
+  <!-- Interactive iPhone Frame -->
+  <div class="iphone">
+    <div class="screen">
+      <div class="status-bar">
+        <span id="sbTime">9:41</span>
+        <div class="island"><div class="island-cam"></div></div>
+        <span>5G 100%</span>
+      </div>
+
+      <div class="screen-body">
+        <!-- Home / SpringBoard -->
+        <div class="view active" id="viewHome">
+          <div class="sb-header">
+            <div class="sb-clock" id="sbBigClock">9:41</div>
+            <div class="sb-sub" id="sbDeviceSub">iPhone Simulator &bull; Drop IPSW or IPA</div>
+          </div>
+          <div class="sb-grid">
+            <div class="app-icon" onclick="showView('viewBoot')">
+              <div class="app-tile" style="background:linear-gradient(135deg,#111827,#374151)">&gt;_</div>
+              <div class="app-label">XNU Boot</div>
+            </div>
+            <div class="app-icon" onclick="showView('viewInfo')">
+              <div class="app-tile" style="background:linear-gradient(135deg,#2563eb,#7c3aed)">iOS</div>
+              <div class="app-label">Firmware</div>
+            </div>
+            <div class="app-icon" onclick="showView('viewFiles')">
+              <div class="app-tile" style="background:linear-gradient(135deg,#0ea5e9,#0284c7)">&#128193;</div>
+              <div class="app-label">Files</div>
+            </div>
+            <div class="app-icon" onclick="runDemoArmApp()">
+              <div class="app-tile" style="background:linear-gradient(135deg,#10b981,#059669)">ARM</div>
+              <div class="app-label">Demo App</div>
+            </div>
+            <div class="app-icon" onclick="document.getElementById('fileInput').click()">
+              <div class="app-tile" style="background:linear-gradient(135deg,#f59e0b,#d97706)">+</div>
+              <div class="app-label">Load File</div>
+            </div>
+          </div>
+          <div class="dock">
+            <div class="app-icon" onclick="showView('viewBoot')">
+              <div class="app-tile" style="width:46px;height:46px;font-size:18px;background:#1e293b">&gt;_</div>
+            </div>
+            <div class="app-icon" onclick="showView('viewInfo')">
+              <div class="app-tile" style="width:46px;height:46px;font-size:16px;background:#4169E1">iOS</div>
+            </div>
+            <div class="app-icon" onclick="showView('viewFiles')">
+              <div class="app-tile" style="width:46px;height:46px;font-size:18px;background:#0284c7">&#128193;</div>
+            </div>
+            <div class="app-icon" onclick="runDemoArmApp()">
+              <div class="app-tile" style="width:46px;height:46px;font-size:14px;background:#059669">ARM</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Verbose Boot / ARM Console -->
+        <div class="view" id="viewBoot">
+          <div class="ios-app-bar">
+            <button class="ios-back" onclick="showView('viewHome')">&lsaquo; Home</button>
+            <span>XNU / ARM Console</span>
+            <span style="width:44px"></span>
+          </div>
+          <div class="ios-term" id="phoneConsole">Navuryx iOS Web Runtime
+Ready. Drop an .ipsw firmware or .ipa app, or tap "Demo App" to run an ARM32 Mach-O binary natively in your browser.
+</div>
+        </div>
+
+        <!-- Device / Firmware Info -->
+        <div class="view" id="viewInfo">
+          <div class="ios-app-bar">
+            <button class="ios-back" onclick="showView('viewHome')">&lsaquo; Home</button>
+            <span>About This iPhone</span>
+            <span style="width:44px"></span>
+          </div>
+          <div class="ios-list" id="phoneInfoList">
+            <div class="ios-row"><span class="k">Status</span><span class="v">No IPSW / IPA loaded</span></div>
+          </div>
+        </div>
+
+        <!-- Archive Files -->
+        <div class="view" id="viewFiles">
+          <div class="ios-app-bar">
+            <button class="ios-back" onclick="showView('viewHome')">&lsaquo; Home</button>
+            <span>Package Contents</span>
+            <span style="width:44px"></span>
+          </div>
+          <div class="ios-list" id="phoneFilesList">
+            <div class="ios-row"><span class="k">Empty</span><span class="v">Load an .ipsw or .ipa</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="home-bar" onclick="showView('viewHome')" title="Home">
+        <div class="home-pill"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Right Control & Diagnostics Panel -->
+  <div class="workspace">
+    <div class="card">
+      <h2>Open iOS Firmware (.ipsw) or App (.ipa)</h2>
+      <p class="sub">Streams multi-gigabyte ZIP64 <code>.ipsw</code> files directly from disk using <code>File.slice()</code> — nothing is uploaded anywhere; everything runs 100% locally in this single HTML file.</p>
+      <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+        <strong>Drop an .ipsw firmware or .ipa app here</strong>
+        <span>Supports 6+ GB ZIP64 iOS IPSWs (Restore.plist, BuildManifest.plist, IM4P/IMG4, complzss, Mach-O) &amp; 32-bit ARM .ipa apps</span>
+      </div>
+      <input type="file" id="fileInput" accept=".ipsw,.ipa,.macho,.bin" style="display:none">
+      <div class="btn-row">
+        <button class="btn" onclick="document.getElementById('fileInput').click()">Choose .ipsw / .ipa File</button>
+        <button class="btn ghost" onclick="runDemoArmApp()">Run Built-In ARM32 Mach-O Demo</button>
+        <button class="btn ghost" onclick="showView('viewBoot')">Show iPhone Console</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Firmware / App Summary</h2>
+      <p class="sub">Parsed directly from the package metadata, IM4P kernelcache, and Mach-O headers.</p>
+      <div class="grid-2" id="summaryGrid">
+        <div class="stat"><div class="label">Package</div><div class="val" id="stPkg">—</div></div>
+        <div class="stat"><div class="label">iOS / Version</div><div class="val" id="stVer">—</div></div>
+        <div class="stat"><div class="label">Target Device(s)</div><div class="val" id="stDev">—</div></div>
+        <div class="stat"><div class="label">Kernel / Arch</div><div class="val" id="stKrnl">—</div></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Bring-Up &amp; ARM Execution Log</h2>
+      <div class="log-box" id="mainLog">Ready. Drop your downloaded .ipsw (e.g. iPhone15,3_16.0_20A362_Restore.ipsw) or an .ipa to inspect &amp; run it natively in this page.</div>
+    </div>
+
+    <div class="card">
+      <h2>Archive Entries (<span id="entryCount">0</span>)</h2>
+      <div class="file-table" id="fileTable">
+        <div class="file-item"><span>No package loaded yet.</span><span></span></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<script>
+// ============================================================================
+// UI helpers
+// ============================================================================
+function updateClock() {
+  const d = new Date();
+  const hh = d.getHours() % 12 || 12;
+  const mm = String(d.getMinutes()).padStart(2, '0');
+  const t = `${hh}:${mm}`;
+  document.getElementById('sbTime').textContent = t;
+  document.getElementById('sbBigClock').textContent = t;
+}
+updateClock();
+setInterval(updateClock, 15000);
+
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+function log(msg, clear = false) {
+  const main = document.getElementById('mainLog');
+  const phone = document.getElementById('phoneConsole');
+  if (clear) {
+    main.textContent = msg;
+    phone.textContent = msg;
+  } else {
+    main.textContent += '\n' + msg;
+    phone.textContent += '\n' + msg;
+  }
+  main.scrollTop = main.scrollHeight;
+  phone.scrollTop = phone.scrollHeight;
+}
+
+function setStatus(text, ok = false) {
+  const p = document.getElementById('statusPill');
+  p.textContent = text;
+  p.className = ok ? 'badge ok' : 'badge';
+}
+
+function humanSize(bytes) {
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  let v = Number(bytes), u = 0;
+  while (v >= 1024 && u < units.length - 1) { v /= 1024; u++; }
+  return u === 0 ? `${v} B` : `${v.toFixed(1)} ${units[u]}`;
+}
+
+// ============================================================================
+// Streaming ZIP + ZIP64 Reader (works on 6+ GB .ipsw files via File.slice!)
+// ============================================================================
+async function readSlice(file, start, length) {
+  const buf = await file.slice(start, start + length).arrayBuffer();
+  return new Uint8Array(buf);
+}
+
+async function parseZipDirectory(file) {
+  const tailLen = Math.min(file.size, 65557);
+  const tailStart = file.size - tailLen;
+  const tail = await readSlice(file, tailStart, tailLen);
+  const dv = new DataView(tail.buffer, tail.byteOffset, tail.byteLength);
+
+  // Locate EOCD (0x06054b50)
+  let eocdOff = -1;
+  for (let i = tail.length - 22; i >= 0; i--) {
+    if (dv.getUint32(i, true) === 0x06054b50) { eocdOff = i; break; }
+  }
+  if (eocdOff < 0) throw new Error('Not a valid ZIP / IPSW / IPA archive (missing EOCD).');
+
+  let cdCount = dv.getUint16(eocdOff + 10, true);
+  let cdSize = dv.getUint32(eocdOff + 12, true);
+  let cdOffset = dv.getUint32(eocdOff + 16, true);
+
+  // Check for ZIP64 EOCD Locator (0x07064b50) right before EOCD
+  if (eocdOff >= 20 && dv.getUint32(eocdOff - 20, true) === 0x07064b50) {
+    const zip64EocdOffset = Number(dv.getBigUint64(eocdOff - 12, true));
+    const z64 = await readSlice(file, zip64EocdOffset, 56);
+    const z64v = new DataView(z64.buffer, z64.byteOffset, z64.byteLength);
+    if (z64v.getUint32(0, true) === 0x06064b50) {
+      cdCount = Number(z64v.getBigUint64(32, true));
+      cdSize = Number(z64v.getBigUint64(40, true));
+      cdOffset = Number(z64v.getBigUint64(48, true));
+    }
+  }
+
+  const cdBytes = await readSlice(file, cdOffset, cdSize);
+  const cdv = new DataView(cdBytes.buffer, cdBytes.byteOffset, cdBytes.byteLength);
+  const dec = new TextDecoder('utf-8');
+  const entries = [];
+  let pos = 0;
+
+  for (let i = 0; i < cdCount && pos + 46 <= cdBytes.length; i++) {
+    if (cdv.getUint32(pos, true) !== 0x02014b50) break;
+    const method = cdv.getUint16(pos + 10, true);
+    let compSize = cdv.getUint32(pos + 20, true);
+    let uncompSize = cdv.getUint32(pos + 24, true);
+    const nameLen = cdv.getUint16(pos + 28, true);
+    const extraLen = cdv.getUint16(pos + 30, true);
+    const commentLen = cdv.getUint16(pos + 32, true);
+    let localHeaderOff = cdv.getUint32(pos + 42, true);
+    const name = dec.decode(cdBytes.subarray(pos + 46, pos + 46 + nameLen));
+
+    // Parse ZIP64 extra field (0x0001) when any 32-bit field is 0xFFFFFFFF
+    if (compSize === 0xFFFFFFFF || uncompSize === 0xFFFFFFFF || localHeaderOff === 0xFFFFFFFF) {
+      let ex = pos + 46 + nameLen;
+      const exEnd = ex + extraLen;
+      while (ex + 4 <= exEnd) {
+        const eid = cdv.getUint16(ex, true);
+        const esz = cdv.getUint16(ex + 2, true);
+        ex += 4;
+        if (eid === 0x0001) {
+          let p = ex;
+          if (uncompSize === 0xFFFFFFFF && p + 8 <= ex + esz) { uncompSize = Number(cdv.getBigUint64(p, true)); p += 8; }
+          if (compSize === 0xFFFFFFFF && p + 8 <= ex + esz) { compSize = Number(cdv.getBigUint64(p, true)); p += 8; }
+          if (localHeaderOff === 0xFFFFFFFF && p + 8 <= ex + esz) { localHeaderOff = Number(cdv.getBigUint64(p, true)); p += 8; }
+        }
+        ex += esz;
+      }
+    }
+
+    entries.push({ name, method, compSize, uncompSize, localHeaderOff });
+    pos += 46 + nameLen + extraLen + commentLen;
+  }
+  return entries;
+}
+
+async function extractZipEntry(file, entry) {
+  const lh = await readSlice(file, entry.localHeaderOff, 30);
+  const lhv = new DataView(lh.buffer, lh.byteOffset, lh.byteLength);
+  if (lhv.getUint32(0, true) !== 0x04034b50) throw new Error(`Corrupt local header for ${entry.name}`);
+  const nlen = lhv.getUint16(26, true);
+  const elen = lhv.getUint16(28, true);
+  const dataStart = entry.localHeaderOff + 30 + nlen + elen;
+  const raw = await readSlice(file, dataStart, entry.compSize);
+  if (entry.method === 0) return raw;
+  if (entry.method === 8) {
+    if (typeof DecompressionStream === 'undefined') throw new Error('Browser lacks DecompressionStream("deflate-raw").');
+    const ds = new DecompressionStream('deflate-raw');
+    const stream = new Blob([raw]).stream().pipeThrough(ds);
+    return new Uint8Array(await new Response(stream).arrayBuffer());
+  }
+  throw new Error(`Unsupported ZIP compression method ${entry.method} for ${entry.name}`);
+}
+
+// ============================================================================
+// XML & Binary Plist Parser
+// ============================================================================
+function parsePlist(bytes) {
+  if (bytes.length >= 8 && String.fromCharCode(...bytes.subarray(0, 6)) === 'bplist') {
+    return parseBinaryPlist(bytes);
+  }
+  const text = new TextDecoder('utf-8').decode(bytes);
+  const doc = new DOMParser().parseFromString(text, 'application/xml');
+  const root = doc.querySelector('plist > *');
+  if (!root) return {};
+  return parseXmlPlistNode(root);
+}
+
+function parseXmlPlistNode(node) {
+  switch (node.tagName) {
+    case 'dict': {
+      const obj = {};
+      const kids = Array.from(node.children);
+      for (let i = 0; i + 1 < kids.length; i += 2) {
+        if (kids[i].tagName === 'key') obj[kids[i].textContent] = parseXmlPlistNode(kids[i + 1]);
+      }
+      return obj;
+    }
+    case 'array': return Array.from(node.children).map(parseXmlPlistNode);
+    case 'string': return node.textContent;
+    case 'integer': return parseInt(node.textContent, 10);
+    case 'real': return parseFloat(node.textContent);
+    case 'true': return true;
+    case 'false': return false;
+    default: return node.textContent;
+  }
+}
+
+function parseBinaryPlist(bytes) {
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const t = bytes.length - 32;
+  const offSize = bytes[t + 6], refSize = bytes[t + 7];
+  const numObjs = Number(dv.getBigUint64(t + 8, false));
+  const topObj = Number(dv.getBigUint64(t + 16, false));
+  const offTable = Number(dv.getBigUint64(t + 24, false));
+  const readU = (p, n) => { let v = 0; for (let i = 0; i < n; i++) v = v * 256 + bytes[p + i]; return v; };
+  const offsets = [];
+  for (let i = 0; i < numObjs; i++) offsets.push(readU(offTable + i * offSize, offSize));
+  const dec = new TextDecoder('utf-8');
+  function readObj(idx) {
+    const o = offsets[idx];
+    const m = bytes[o], kind = m >> 4;
+    let info = m & 0xF, p = o + 1;
+    if (kind !== 0 && info === 0xF) {
+      const n = 1 << (bytes[p] & 0xF);
+      info = readU(p + 1, n);
+      p += 1 + n;
+    }
+    if (kind === 0) return info === 9 ? true : info === 8 ? false : null;
+    if (kind === 1) return readU(p, 1 << info);
+    if (kind === 5) return dec.decode(bytes.subarray(p, p + info));
+    if (kind === 6) {
+      let s = '';
+      for (let i = 0; i < info; i++) s += String.fromCharCode(dv.getUint16(p + i * 2, false));
+      return s;
+    }
+    if (kind === 0xA) {
+      const a = [];
+      for (let i = 0; i < info; i++) a.push(readObj(readU(p + i * refSize, refSize)));
+      return a;
+    }
+    if (kind === 0xD) {
+      const obj = {};
+      for (let i = 0; i < info; i++) {
+        const k = readObj(readU(p + i * refSize, refSize));
+        const v = readObj(readU(p + (info + i) * refSize, refSize));
+        obj[k] = v;
+      }
+      return obj;
+    }
+    return null;
+  }
+  return readObj(topObj);
+}
+
+// ============================================================================
+// Apple IM4P / IMG4 Unwrapper + complzss Decompressor + Mach-O Parser
+// ============================================================================
+function readDerTlv(d, off) {
+  const tag = d[off];
+  const lb = d[off + 1];
+  let len = 0, hdrEnd = off + 2;
+  if ((lb & 0x80) === 0) {
+    len = lb;
+  } else {
+    const n = lb & 0x7F;
+    for (let i = 0; i < n; i++) len = (len * 256) + d[off + 2 + i];
+    hdrEnd = off + 2 + n;
+  }
+  return { tag, body: d.subarray(hdrEnd, hdrEnd + len), next: hdrEnd + len };
+}
+
+function parseIm4p(d) {
+  if (d[0] !== 0x30) return null;
+  let seq = readDerTlv(d, 0).body;
+  let t0 = readDerTlv(seq, 0);
+  const dec = new TextDecoder('ascii');
+  let m0 = dec.decode(t0.body);
+  let pos = t0.next;
+  if (m0 === 'IMG4') {
+    const inner = readDerTlv(seq, pos);
+    seq = inner.body;
+    t0 = readDerTlv(seq, 0);
+    m0 = dec.decode(t0.body);
+    pos = t0.next;
+  }
+  if (m0 !== 'IM4P') return null;
+  const t1 = readDerTlv(seq, pos);
+  const t2 = readDerTlv(seq, t1.next);
+  const t3 = readDerTlv(seq, t2.next);
+  return { fourcc: dec.decode(t1.body), desc: dec.decode(t2.body), payload: t3.body };
+}
+
+function decompressComplzss(d) {
+  if (d.length < 0x180) return null;
+  const magic = String.fromCharCode(...d.subarray(0, 8));
+  if (magic !== 'complzss') return null;
+  const dv = new DataView(d.buffer, d.byteOffset, d.byteLength);
+  const uncompSize = dv.getUint32(12, false);
+  const compSize = dv.getUint32(16, false);
+  const src = d.subarray(0x180, Math.min(d.length, 0x180 + compSize));
+  const ring = new Uint8Array(4096).fill(0x20);
+  let r = 4078, out = new Uint8Array(uncompSize), o = 0, i = 0, flags = 0;
+  while (i < src.length && o < uncompSize) {
+    flags >>= 1;
+    if ((flags & 0x100) === 0) {
+      flags = src[i++] | 0xFF00;
+      if (i >= src.length) break;
+    }
+    if (flags & 1) {
+      const c = src[i++];
+      out[o++] = c; ring[r] = c; r = (r + 1) & 4095;
+    } else {
+      if (i + 1 >= src.length) break;
+      const b0 = src[i++], b1 = src[i++];
+      const pos = b0 | ((b1 & 0xF0) << 4);
+      const len = (b1 & 0x0F) + 3;
+      for (let k = 0; k < len && o < uncompSize; k++) {
+        const c = ring[(pos + k) & 4095];
+        out[o++] = c; ring[r] = c; r = (r + 1) & 4095;
+      }
+    }
+  }
+  return out.subarray(0, o);
+}
+
+function extractDarwinBanner(bytes) {
+  const needle = 'Darwin Kernel Version ';
+  const nb = Array.from(needle).map(c => c.charCodeAt(0));
+  for (let i = 0; i + nb.length < bytes.length; i++) {
+    let ok = true;
+    for (let j = 0; j < nb.length; j++) if (bytes[i + j] !== nb[j]) { ok = false; break; }
+    if (ok) {
+      let end = i;
+      while (end < bytes.length && end < i + 240 && bytes[end] !== 0 && bytes[end] !== 10) end++;
+      return new TextDecoder('ascii').decode(bytes.subarray(i, end));
+    }
+  }
+  return null;
+}
+
+function parseMachO(d) {
+  if (d.length < 32) return null;
+  const dv = new DataView(d.buffer, d.byteOffset, d.byteLength);
+  const magic = dv.getUint32(0, true);
+  if (magic !== 0xFEEDFACE && magic !== 0xFEEDFACF) return null;
+  const is64 = magic === 0xFEEDFACF;
+  const cpu = dv.getUint32(4, true), sub = dv.getUint32(8, true) & 0xFF;
+  const ncmds = dv.getUint32(16, true);
+  const arch = cpu === 12 ? (sub === 6 ? 'armv6' : sub === 9 ? 'armv7' : 'arm')
+    : cpu === 0x0100000C ? (sub === 2 ? 'arm64e' : 'arm64') : `cpu_${cpu.toString(16)}`;
+  const segments = [], dylibs = [];
+  let encrypted = false, entry = 0n;
+  let p = is64 ? 32 : 28;
+  const dec = new TextDecoder('ascii');
+  for (let i = 0; i < Math.min(ncmds, 4096) && p + 8 <= d.length; i++) {
+    const cmd = dv.getUint32(p, true), sz = dv.getUint32(p + 4, true);
+    if (sz < 8) break;
+    if (cmd === 0x1) {
+      const name = dec.decode(d.subarray(p + 8, p + 24)).replace(/\0+$/, '');
+      segments.push({ name, vmaddr: dv.getUint32(p + 24, true), vmsize: dv.getUint32(p + 28, true), fileoff: dv.getUint32(p + 32, true), filesize: dv.getUint32(p + 36, true) });
+    } else if (cmd === 0x19) {
+      const name = dec.decode(d.subarray(p + 8, p + 24)).replace(/\0+$/, '');
+      segments.push({ name, vmaddr: Number(dv.getBigUint64(p + 24, true)), vmsize: Number(dv.getBigUint64(p + 32, true)), fileoff: Number(dv.getBigUint64(p + 40, true)), filesize: Number(dv.getBigUint64(p + 48, true)) });
+    } else if (cmd === 0xC || cmd === 0x18 || cmd === 0x80000018) {
+      const off = dv.getUint32(p + 8, true);
+      dylibs.push(dec.decode(d.subarray(p + off, p + sz)).split('\0')[0]);
+    } else if (cmd === 0x21 || cmd === 0x2C) {
+      if (dv.getUint32(p + 16, true) !== 0) encrypted = true;
+    } else if (cmd === 0x80000028) {
+      entry = dv.getBigUint64(p + 8, true);
+    } else if (cmd === 0x5) {
+      entry = cpu === 12 ? BigInt(dv.getUint32(p + 16 + 15 * 4, true)) : dv.getBigUint64(p + 16 + 32 * 8, true);
+    }
+    p += sz;
+  }
+  return { arch, is64, segments, dylibs, encrypted, entry };
+}
+
+// ============================================================================
+// Built-In Browser ARM32 + Darwin `svc #0x80` CPU Core
+// ============================================================================
+function runArm32MachO(bytes, macho, maxSteps = 50000) {
+  const pages = new Map();
+  const mapWrite = (addr, data) => {
+    for (let i = 0; i < data.length; i++) {
+      const a = (addr + i) >>> 0, pg = a >>> 12;
+      let buf = pages.get(pg);
+      if (!buf) { buf = new Uint8Array(4096); pages.set(pg, buf); }
+      buf[a & 4095] = data[i];
+    }
+  };
+  const r8 = a => { const b = pages.get((a >>> 0) >>> 12); return b ? b[a & 4095] : 0; };
+  const r32 = a => (r8(a) | (r8(a+1) << 8) | (r8(a+2) << 16) | (r8(a+3) << 24)) >>> 0;
+
+  let textBase = 0x1000;
+  for (const s of macho.segments) {
+    if (s.name === '__PAGEZERO' || s.vmsize === 0) continue;
+    if (s.name === '__TEXT') textBase = s.vmaddr >>> 0;
+    if (s.filesize > 0) mapWrite(s.vmaddr >>> 0, bytes.subarray(s.fileoff, s.fileoff + s.filesize));
+  }
+  const r = new Uint32Array(16);
+  let pc = Number(macho.entry) || textBase;
+  if (pc < textBase) pc = (textBase + pc) >>> 0;
+  r[13] = 0x2FF3FFF0;
+  r[14] = 0xFFFFF000;
+  let stdout = '', exitCode = null, stopReason = 'Step budget reached', steps = 0;
+
+  for (; steps < maxSteps; steps++) {
+    if (pc === 0xFFFFF000 || pc === 0) { exitCode = r[0] | 0; stopReason = `Returned (${exitCode})`; break; }
+    const ins = r32(pc);
+    pc = (pc + 4) >>> 0;
+    // SVC (cond=0xE, bits 27..24 = 0xF)
+    if ((ins >>> 24) === 0xEF) {
+      const sys = r[12] || r[0];
+      if (sys === 1) { exitCode = r[0] | 0; stopReason = `Darwin exit(${exitCode})`; steps++; break; }
+      if (sys === 4) {
+        const ptr = r[1], len = Math.min(r[2], 65536);
+        const out = new Uint8Array(len);
+        for (let k = 0; k < len; k++) out[k] = r8(ptr + k);
+        stdout += new TextDecoder('utf-8').decode(out);
+        r[0] = len;
+        continue;
+      }
+      if (sys === 20) { r[0] = 100; continue; }
+      if (sys === 24 || sys === 47) { r[0] = 501; continue; }
+      stopReason = `Unimplemented Darwin syscall #${sys}`; steps++; break;
+    }
+    // MOV Rd, #imm12 (E3A0xxxx)
+    if ((ins & 0x0FEF0000) === 0x03A00000) {
+      const rd = (ins >>> 12) & 0xF;
+      const rot = ((ins >>> 8) & 0xF) * 2;
+      const imm = ins & 0xFF;
+      r[rd] = ((imm >>> rot) | (imm << (32 - rot))) >>> 0;
+      continue;
+    }
+    // ADD Rd, Rn, #imm12
+    if ((ins & 0x0FE00000) === 0x02800000) {
+      const rd = (ins >>> 12) & 0xF, rn = (ins >>> 16) & 0xF;
+      const rot = ((ins >>> 8) & 0xF) * 2, imm = ins & 0xFF;
+      const v = ((imm >>> rot) | (imm << (32 - rot))) >>> 0;
+      r[rd] = (r[rn] + v) >>> 0;
+      continue;
+    }
+    // BX LR
+    if (ins === 0xE12FFF1E) { pc = r[14]; continue; }
+    stopReason = `Stopped at ARM instruction 0x${ins.toString(16).padStart(8, '0')} @ 0x${(pc - 4).toString(16)}`;
+    break;
+  }
+  return { steps, exitCode, stdout, stopReason, entry: Number(macho.entry) || textBase };
+}
+
+function runDemoArmApp() {
+  // Build a real 32-bit ARM Mach-O binary calling Darwin write(1, "Hello from iOS ARM32 in HTML!\n", 30) + exit(0)
+  const d = new Uint8Array(0x2000);
+  const dv = new DataView(d.buffer);
+  const put = (o, v) => dv.setUint32(o, v, true);
+  put(0, 0xFEEDFACE); put(4, 12); put(8, 9); put(12, 2); put(16, 2); put(20, 136);
+  put(28, 1); put(32, 56);
+  '__TEXT'.split('').forEach((c, i) => d[36 + i] = c.charCodeAt(0));
+  put(52, 0x1000); put(56, 0x2000); put(60, 0); put(64, 0x2000);
+  put(84, 5); put(88, 80); put(84 + 16 + 60, 0x2000);
+  const msg = 'Hello from iOS ARM32 in HTML!\n';
+  msg.split('').forEach((c, i) => d[0x1100 + i] = c.charCodeAt(0));
+  const code = [
+    0xE3A00001, // mov r0, #1
+    0xE3A01C21, // mov r1, #0x2100
+    0xE3A0201E, // mov r2, #30
+    0xE3A0C004, // mov r12, #4 (SYS_write)
+    0xEF000080, // svc #0x80
+    0xE3A00000, // mov r0, #0
+    0xE3A0C001, // mov r12, #1 (SYS_exit)
+    0xEF000080, // svc #0x80
+  ];
+  code.forEach((w, i) => put(0x1000 + i * 4, w));
+  const m = parseMachO(d);
+  const res = runArm32MachO(d, m);
+  document.getElementById('stPkg').textContent = 'Demo.app (ARM32 Mach-O)';
+  document.getElementById('stVer').textContent = 'iOS 3.1 (Demo)';
+  document.getElementById('stDev').textContent = 'iPhone (armv7)';
+  document.getElementById('stKrnl').textContent = `armv7 @ 0x${res.entry.toString(16)}`;
+  document.getElementById('sbDeviceSub').textContent = 'Demo.app • ARM32 Executed';
+  setStatus('ARM32 Mach-O executed natively!', true);
+  log(`[ARM32 Mach-O Demo]\nArch: ${m.arch} | Entry: 0x${res.entry.toString(16)}\nExecuted ${res.steps} instructions -> ${res.stopReason}\n\nstdout:\n${res.stdout}`, true);
+  showView('viewBoot');
+}
+
+// ============================================================================
+// IPSW / IPA Loader
+// ============================================================================
+async function handleFile(file) {
+  const lower = file.name.toLowerCase();
+  setStatus(`Reading ${file.name} (${humanSize(file.size)})...`);
+  log(`Opening ${file.name} (${humanSize(file.size)})...`, true);
+  showView('viewBoot');
+
+  try {
+    const entries = await parseZipDirectory(file);
+    document.getElementById('entryCount').textContent = entries.length;
+    const ft = document.getElementById('fileTable');
+    const pf = document.getElementById('phoneFilesList');
+    ft.innerHTML = entries.slice(0, 120).map(e => `<div class="file-item"><span>${e.name}</span><span>${humanSize(e.uncompSize)}</span></div>`).join('');
+    pf.innerHTML = entries.slice(0, 60).map(e => `<div class="ios-row"><span class="k">${e.name.split('/').pop() || e.name}</span><span class="v">${humanSize(e.uncompSize)}</span></div>`).join('');
+
+    if (lower.endsWith('.ipsw')) {
+      log(`ZIP64 central directory parsed: ${entries.length} files.`);
+      const manifestEntry = entries.find(e => e.name.toLowerCase() === 'restore.plist') || entries.find(e => e.name.toLowerCase() === 'buildmanifest.plist');
+      let ver = '?', build = '?', devices = [];
+      if (manifestEntry) {
+        const raw = await extractZipEntry(file, manifestEntry);
+        const pl = parsePlist(raw);
+        ver = pl.ProductVersion || '?';
+        build = pl.ProductBuildVersion || '?';
+        devices = Array.isArray(pl.SupportedProductTypes) ? pl.SupportedProductTypes : (pl.ProductType ? [pl.ProductType] : []);
+      }
+      const dmgs = entries.filter(e => e.name.toLowerCase().endsWith('.dmg')).sort((a, b) => b.uncompSize - a.uncompSize);
+      const rootDmg = dmgs[0];
+      const bootloaders = entries.filter(e => /iboot|llb|ibss|ibec/i.test(e.name));
+      const kernels = entries.filter(e => /kernelcache/i.test(e.name) && !e.name.endsWith('/'));
+
+      document.getElementById('stPkg').textContent = file.name;
+      document.getElementById('stVer').textContent = `iOS ${ver} (${build})`;
+      document.getElementById('stDev').textContent = devices.join(', ') || 'Apple Device';
+      document.getElementById('sbDeviceSub').textContent = `iOS ${ver} (${build}) • ${devices[0] || 'iPhone'}`;
+
+      log(`iOS ${ver} (Build ${build})`);
+      log(`Devices: ${devices.join(', ') || 'unknown'}`);
+      if (rootDmg) log(`Root filesystem DMG: ${rootDmg.name} (${humanSize(rootDmg.uncompSize)})`);
+      log(`Bootloaders: ${bootloaders.length} image(s) (iBoot/LLB/iBSS/iBEC)`);
+
+      let krnlSummary = kernels.length ? kernels[0].name : 'None';
+      if (kernels.length > 0 && kernels[0].uncompSize < 96 * 1024 * 1024) {
+        const kentry = kernels[0];
+        log(`\nExtracting kernelcache: ${kentry.name} (${humanSize(kentry.uncompSize)})...`);
+        const kraw = await extractZipEntry(file, kentry);
+        const im4p = parseIm4p(kraw);
+        let payload = kraw;
+        if (im4p) {
+          log(`Unwrapped ASN.1 IM4P container [${im4p.fourcc}] (${im4p.desc})`);
+          payload = im4p.payload;
+          const head4 = String.fromCharCode(...payload.subarray(0, 4));
+          const head8 = String.fromCharCode(...payload.subarray(0, 8));
+          if (head8 === 'complzss') {
+            log('Decompressing Apple complzss (LZSS) XNU kernel...');
+            payload = decompressComplzss(payload);
+            log(`Decompressed XNU kernel: ${humanSize(payload.length)}`);
+            krnlSummary = `IM4P + complzss (${humanSize(payload.length)})`;
+          } else if (head4 === 'bvx2' || head4 === 'bvxn') {
+            log('Detected Apple LZFSE (bvx2) unencrypted iOS 12+ kernelcache payload.');
+            krnlSummary = 'IM4P + LZFSE (bvx2, unencrypted)';
+          } else {
+            krnlSummary = `IM4P (${im4p.fourcc})`;
+          }
+        }
+        const banner = extractDarwinBanner(payload);
+        if (banner) log(`\n${banner}`);
+        const m = parseMachO(payload);
+        if (m) {
+          krnlSummary = `${m.arch} XNU Mach-O (${m.segments.length} segs)`;
+          log(`Parsed XNU Mach-O: ${m.arch}, ${m.segments.length} segments, entry 0x${m.entry.toString(16)}`);
+        }
+      }
+      document.getElementById('stKrnl').textContent = krnlSummary;
+      document.getElementById('phoneInfoList').innerHTML = [
+        ['Firmware', `iOS ${ver}`],
+        ['Build', build],
+        ['Device', devices.join(', ') || 'iPhone'],
+        ['Files', entries.length],
+        ['Root DMG', rootDmg ? `${rootDmg.name} (${humanSize(rootDmg.uncompSize)})` : '—'],
+        ['Kernelcache', krnlSummary],
+        ['Bootloaders', `${bootloaders.length} images`],
+      ].map(([k, v]) => `<div class="ios-row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
+      setStatus(`Loaded iOS ${ver} (${build}) IPSW`, true);
+    } else if (lower.endsWith('.ipa')) {
+      const plistEntry = entries.find(e => /^Payload\/[^/]+\.app\/Info\.plist$/.test(e.name));
+      if (!plistEntry) throw new Error('No Payload/<App>.app/Info.plist found.');
+      const pl = parsePlist(await extractZipEntry(file, plistEntry));
+      const appDir = plistEntry.name.slice(0, -'Info.plist'.length);
+      const name = pl.CFBundleDisplayName || pl.CFBundleName || pl.CFBundleExecutable || file.name;
+      const ver = pl.CFBundleShortVersionString || pl.CFBundleVersion || '?';
+      const minOs = pl.MinimumOSVersion || '?';
+      document.getElementById('stPkg').textContent = name;
+      document.getElementById('stVer').textContent = `v${ver} (iOS ${minOs}+)`;
+      document.getElementById('stDev').textContent = pl.CFBundleIdentifier || 'iOS App';
+      document.getElementById('sbDeviceSub').textContent = `${name} • v${ver}`;
+      log(`iOS App: ${name} (${pl.CFBundleIdentifier || '?'}) v${ver}, min iOS ${minOs}`);
+
+      if (pl.CFBundleExecutable) {
+        const exeEntry = entries.find(e => e.name === appDir + pl.CFBundleExecutable);
+        if (exeEntry) {
+          const bin = await extractZipEntry(file, exeEntry);
+          const m = parseMachO(bin);
+          if (m) {
+            document.getElementById('stKrnl').textContent = `${m.arch}${m.encrypted ? ' (FairPlay Encrypted)' : ''}`;
+            log(`Mach-O: ${m.arch}, ${m.segments.length} segments, ${m.dylibs.length} frameworks, encrypted=${m.encrypted}`);
+            if (!m.encrypted && !m.is64 && m.arch.startsWith('arm')) {
+              const res = runArm32MachO(bin, m);
+              log(`ARM32 Core ran ${res.steps} instructions -> ${res.stopReason}`);
+              if (res.stdout) log(`\nstdout:\n${res.stdout}`);
+            }
+          }
+        }
+      }
+      setStatus(`Loaded ${name} (.ipa)`, true);
+    } else {
+      throw new Error('Please choose an .ipsw firmware or .ipa app file.');
+    }
+  } catch (err) {
+    setStatus('Error reading package');
+    log(`Error: ${err.message}`);
+  }
+}
+
+const dz = document.getElementById('dropzone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault(); dz.classList.remove('over');
+  if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+});
+document.getElementById('fileInput').addEventListener('change', e => {
+  if (e.target.files[0]) handleFile(e.target.files[0]);
+});
+</script>
+</body>
+</html>
