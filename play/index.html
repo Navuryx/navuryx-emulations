@@ -258,14 +258,27 @@ function fitScreen(e) {
   const w = e.width(), h = e.height();
   canvas.width = w; canvas.height = h;
   image = ctx.createImageData(w, h);
-  const handheld = [[160, 144], [224, 144], [144, 224], [384, 224], [768, 224], [240, 160]].some(([a, b]) => a === w && b === h);
+  const exact = [[160, 144], [224, 144], [144, 224], [384, 224], [768, 224], [240, 160], [256, 384], [400, 480], [480, 272], [960, 544], [1280, 720]].some(([a, b]) => a === w && b === h);
   const screen = $("screen");
-  screen.style.aspectRatio = handheld ? `${w} / ${h}` : "4 / 3";
+  screen.style.aspectRatio = exact ? `${w} / ${h}` : "4 / 3";
   // Keep the whole picture on screen: never taller than most of the window.
-  const ratio = handheld ? w / h : 4 / 3;
+  const ratio = exact ? w / h : 4 / 3;
   screen.style.width = `min(100%, calc(78vh * ${ratio}))`;
   screen.style.marginInline = "auto";
 }
+
+// Forward mouse / touch pointer coordinates to dual-screen & touch consoles (3DS, NDS, PS Vita)
+function sendTouch(ev, down) {
+  if (!emu) return;
+  const r = canvas.getBoundingClientRect();
+  const nx = Math.max(0, Math.min(1, (ev.clientX - r.left) / Math.max(1, r.width)));
+  const ny = Math.max(0, Math.min(1, (ev.clientY - r.top) / Math.max(1, r.height)));
+  emu.set_touch(down, nx, ny);
+}
+canvas.addEventListener("pointerdown", (e) => { canvas.setPointerCapture(e.pointerId); sendTouch(e, true); });
+canvas.addEventListener("pointermove", (e) => { if (e.buttons) sendTouch(e, true); });
+canvas.addEventListener("pointerup", (e) => sendTouch(e, false));
+canvas.addEventListener("pointercancel", (e) => sendTouch(e, false));
 
 function persist() {
   if (!emu) return;

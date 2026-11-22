@@ -102,6 +102,15 @@ export class Emulator {
         wasm.emulator_set_buttons(this.__wbg_ptr, pad, buttons);
     }
     /**
+     * Touchscreen / pointer input in normalized 0..1 coordinates (Nintendo 3DS, NDS, PS Vita).
+     * @param {boolean} pressed
+     * @param {number} x
+     * @param {number} y
+     */
+    set_touch(pressed, x, y) {
+        wasm.emulator_set_touch(this.__wbg_ptr, pressed, x, y);
+    }
+    /**
      * Interleaved stereo samples produced since the last call.
      * @returns {Float32Array}
      */
