@@ -137,6 +137,180 @@ export class Emulator {
 if (Symbol.dispose) Emulator.prototype[Symbol.dispose] = Emulator.prototype.free;
 
 /**
+ * Real Rust WebAssembly ARM64e XNU kernel runner for `ios.html`:
+ * unwraps IM4P, decompresses LZFSE (`bvx2`) or `complzss`, sanitizes Apple DeviceTree,
+ * and boots XNU incrementally in the browser with live Apple S5L UART0 serial console output.
+ */
+export class IosKernelWasm {
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        IosKernelWasmFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_ioskernelwasm_free(ptr, 0);
+    }
+    /**
+     * @returns {string}
+     */
+    arch() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.ioskernelwasm_arch(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * @returns {string}
+     */
+    banner() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.ioskernelwasm_banner(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * @returns {number}
+     */
+    dt_size() {
+        const ret = wasm.ioskernelwasm_dt_size(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {string}
+     */
+    entry_hex() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.ioskernelwasm_entry_hex(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * @returns {number}
+     */
+    instructions() {
+        const ret = wasm.ioskernelwasm_instructions(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    kernel_size() {
+        const ret = wasm.ioskernelwasm_kernel_size(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {string}
+     */
+    mmio_summary() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.ioskernelwasm_mmio_summary(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * @returns {boolean}
+     */
+    mmu_enabled() {
+        const ret = wasm.ioskernelwasm_mmu_enabled(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * @param {Uint8Array} kernel_raw
+     * @param {Uint8Array | null} [device_tree_raw]
+     */
+    constructor(kernel_raw, device_tree_raw) {
+        const ptr0 = passArray8ToWasm0(kernel_raw, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        var ptr1 = isLikeNone(device_tree_raw) ? 0 : passArray8ToWasm0(device_tree_raw, wasm.__wbindgen_malloc);
+        var len1 = WASM_VECTOR_LEN;
+        const ret = wasm.ioskernelwasm_new(ptr0, len0, ptr1, len1);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        this.__wbg_ptr = ret[0];
+        IosKernelWasmFinalization.register(this, this.__wbg_ptr, this);
+        return this;
+    }
+    /**
+     * @returns {string}
+     */
+    pc_hex() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.ioskernelwasm_pc_hex(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * @returns {number}
+     */
+    segments() {
+        const ret = wasm.ioskernelwasm_segments(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @param {number} max_steps
+     * @returns {string | undefined}
+     */
+    step(max_steps) {
+        const ret = wasm.ioskernelwasm_step(this.__wbg_ptr, max_steps);
+        let v1;
+        if (ret[0] !== 0) {
+            v1 = getStringFromWasm0(ret[0], ret[1]);
+            wasm.__wbindgen_free(ret[0], ret[1] * 1, 1);
+        }
+        return v1;
+    }
+    /**
+     * @returns {string}
+     */
+    uart_output() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.ioskernelwasm_uart_output(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+}
+if (Symbol.dispose) IosKernelWasm.prototype[Symbol.dispose] = IosKernelWasm.prototype.free;
+
+/**
  * Extensions for the file picker's accept attribute.
  * @returns {string}
  */
@@ -203,6 +377,9 @@ function __wbg_get_imports() {
 const EmulatorFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_emulator_free(ptr, 1));
+const IosKernelWasmFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_ioskernelwasm_free(ptr, 1));
 
 function getArrayF32FromWasm0(ptr, len) {
     ptr = ptr >>> 0;
@@ -232,6 +409,10 @@ function getUint8ArrayMemory0() {
         cachedUint8ArrayMemory0 = new Uint8Array(wasm.memory.buffer);
     }
     return cachedUint8ArrayMemory0;
+}
+
+function isLikeNone(x) {
+    return x === undefined || x === null;
 }
 
 function passArray8ToWasm0(arg, malloc) {

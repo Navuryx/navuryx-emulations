@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Navuryx iOS — Native Browser IPSW &amp; IPA Runner</title>
+<link rel="icon" href="logo.png">
 <style>
   :root {
     --bg: #0b0d14;
@@ -301,10 +302,11 @@
   <div class="brand">
     <div class="brand-dot"></div>
     <span>Navuryx iOS Web</span>
-    <span class="badge ok">Single-File HTML</span>
-    <span class="badge">ZIP64 IPSW + IPA + ARM32 Core</span>
+    <span class="badge ok">Rust WASM ARM64e + LZFSE</span>
+    <a class="badge" href="index.html" style="text-decoration:none;color:var(--text)">&larr; Download</a>
+    <a class="badge" href="play/index.html" style="text-decoration:none;color:var(--text)">Play Online</a>
   </div>
-  <div class="badge" id="statusPill">Ready — drop an .ipsw or .ipa</div>
+  <div class="badge" id="statusPill">Loading WASM ARM64e core...</div>
 </header>
 
 <main>
@@ -418,6 +420,7 @@ Ready. Drop an .ipsw firmware or .ipa app, or tap "Demo App" to run an ARM32 Mac
       <div class="btn-row">
         <button class="btn" onclick="document.getElementById('fileInput').click()">Choose .ipsw / .ipa File</button>
         <button class="btn ghost" onclick="runDemoArmApp()">Run Built-In ARM32 Mach-O Demo</button>
+        <button class="btn ghost" id="btnStopXnu" onclick="toggleXnuPause()" style="display:none">Pause XNU</button>
         <button class="btn ghost" onclick="showView('viewBoot')">Show iPhone Console</button>
       </div>
     </div>
@@ -904,9 +907,74 @@ function runDemoArmApp() {
 }
 
 // ============================================================================
+// Rust WebAssembly ARM64e XNU + LZFSE Runtime Bridge (./play/web.js)
+// ============================================================================
+let wasmApi = null;
+let activeXnu = null;
+let xnuPaused = false;
+let xnuRaf = 0;
+let xnuBaseLog = '';
+
+(async () => {
+  try {
+    const mod = await import('./play/web.js');
+    await mod.default();
+    wasmApi = mod;
+    setStatus('Ready — Rust WASM ARM64e + LZFSE loaded', true);
+  } catch (e) {
+    setStatus('Ready — drop an .ipsw or .ipa (JS fallback)');
+  }
+})();
+
+function stopActiveXnu() {
+  if (xnuRaf) { cancelAnimationFrame(xnuRaf); xnuRaf = 0; }
+  if (activeXnu) { try { activeXnu.free(); } catch (_) {} activeXnu = null; }
+  xnuPaused = false;
+  const btn = document.getElementById('btnStopXnu');
+  if (btn) btn.style.display = 'none';
+}
+
+function toggleXnuPause() {
+  if (!activeXnu) return;
+  xnuPaused = !xnuPaused;
+  const btn = document.getElementById('btnStopXnu');
+  if (btn) btn.textContent = xnuPaused ? 'Resume XNU' : 'Pause XNU';
+  if (!xnuPaused) pumpXnuLoop();
+}
+
+function renderXnuStatus(stopReason = null) {
+  if (!activeXnu) return;
+  const insns = Math.floor(activeXnu.instructions()).toLocaleString();
+  const mmu = activeXnu.mmu_enabled() ? 'ON (16 KB)' : 'OFF';
+  const pc = activeXnu.pc_hex();
+  const mmio = activeXnu.mmio_summary();
+  const uart = activeXnu.uart_output();
+  let txt = xnuBaseLog + `\n\n[XNU ARM64e Live]\nInstructions: ${insns} | PC: ${pc} | MMU: ${mmu}`;
+  if (mmio) txt += `\nApple SoC MMIO: ${mmio}`;
+  if (uart) txt += `\n\n--- Apple S5L UART0 Serial Output ---\n${uart}`;
+  if (stopReason) txt += `\n\nStopped: ${stopReason}`;
+  log(txt, true);
+  setStatus(stopReason ? `XNU stopped (${insns} insns)` : `Booting XNU: ${insns} insns (MMU ${mmu})`, !stopReason);
+}
+
+function pumpXnuLoop() {
+  if (!activeXnu || xnuPaused) return;
+  const stop = activeXnu.step(300000);
+  renderXnuStatus(stop || null);
+  if (stop) {
+    const btn = document.getElementById('btnStopXnu');
+    if (btn) btn.style.display = 'none';
+    xnuRaf = 0;
+    return;
+  }
+  xnuRaf = requestAnimationFrame(pumpXnuLoop);
+}
+
+// ============================================================================
 // IPSW / IPA Loader
 // ============================================================================
 async function handleFile(file) {
+  stopActiveXnu();
   const lower = file.name.toLowerCase();
   setStatus(`Reading ${file.name} (${humanSize(file.size)})...`);
   log(`Opening ${file.name} (${humanSize(file.size)})...`, true);
@@ -935,6 +1003,7 @@ async function handleFile(file) {
       const rootDmg = dmgs[0];
       const bootloaders = entries.filter(e => /iboot|llb|ibss|ibec/i.test(e.name));
       const kernels = entries.filter(e => /kernelcache/i.test(e.name) && !e.name.endsWith('/'));
+      const dtEntry = entries.find(e => /devicetree/i.test(e.name) && e.name.toLowerCase().endsWith('.im4p') && !e.name.endsWith('/'));
 
       document.getElementById('stPkg').textContent = file.name;
       document.getElementById('stVer').textContent = `iOS ${ver} (${build})`;
@@ -951,31 +1020,56 @@ async function handleFile(file) {
         const kentry = kernels[0];
         log(`\nExtracting kernelcache: ${kentry.name} (${humanSize(kentry.uncompSize)})...`);
         const kraw = await extractZipEntry(file, kentry);
-        const im4p = parseIm4p(kraw);
-        let payload = kraw;
-        if (im4p) {
-          log(`Unwrapped ASN.1 IM4P container [${im4p.fourcc}] (${im4p.desc})`);
-          payload = im4p.payload;
-          const head4 = String.fromCharCode(...payload.subarray(0, 4));
-          const head8 = String.fromCharCode(...payload.subarray(0, 8));
-          if (head8 === 'complzss') {
-            log('Decompressing Apple complzss (LZSS) XNU kernel...');
-            payload = decompressComplzss(payload);
-            log(`Decompressed XNU kernel: ${humanSize(payload.length)}`);
-            krnlSummary = `IM4P + complzss (${humanSize(payload.length)})`;
-          } else if (head4 === 'bvx2' || head4 === 'bvxn') {
-            log('Detected Apple LZFSE (bvx2) unencrypted iOS 12+ kernelcache payload.');
-            krnlSummary = 'IM4P + LZFSE (bvx2, unencrypted)';
-          } else {
-            krnlSummary = `IM4P (${im4p.fourcc})`;
+        let dtRaw = null;
+        if (dtEntry) {
+          log(`Extracting Apple DeviceTree: ${dtEntry.name} (${humanSize(dtEntry.uncompSize)})...`);
+          dtRaw = await extractZipEntry(file, dtEntry);
+        }
+
+        if (wasmApi && wasmApi.IosKernelWasm) {
+          try {
+            log('Unpacking IM4P + LZFSE/complzss & booting XNU on Rust WASM ARM64e EL1 core...');
+            activeXnu = new wasmApi.IosKernelWasm(kraw, dtRaw);
+            krnlSummary = `${activeXnu.arch()} XNU (${activeXnu.segments()} segs, ${humanSize(activeXnu.kernel_size())})`;
+            if (activeXnu.banner()) log(`\n${activeXnu.banner()}`);
+            log(`Entry: ${activeXnu.entry_hex()} | DeviceTree attached: ${humanSize(activeXnu.dt_size())}`);
+            xnuBaseLog = document.getElementById('mainLog').textContent;
+            const btn = document.getElementById('btnStopXnu');
+            if (btn) { btn.style.display = 'inline-flex'; btn.textContent = 'Pause XNU'; }
+            xnuPaused = false;
+            pumpXnuLoop();
+          } catch (we) {
+            log(`WASM ARM64e boot note: ${we}`);
           }
         }
-        const banner = extractDarwinBanner(payload);
-        if (banner) log(`\n${banner}`);
-        const m = parseMachO(payload);
-        if (m) {
-          krnlSummary = `${m.arch} XNU Mach-O (${m.segments.length} segs)`;
-          log(`Parsed XNU Mach-O: ${m.arch}, ${m.segments.length} segments, entry 0x${m.entry.toString(16)}`);
+
+        if (!activeXnu) {
+          const im4p = parseIm4p(kraw);
+          let payload = kraw;
+          if (im4p) {
+            log(`Unwrapped ASN.1 IM4P container [${im4p.fourcc}] (${im4p.desc})`);
+            payload = im4p.payload;
+            const head4 = String.fromCharCode(...payload.subarray(0, 4));
+            const head8 = String.fromCharCode(...payload.subarray(0, 8));
+            if (head8 === 'complzss') {
+              log('Decompressing Apple complzss (LZSS) XNU kernel...');
+              payload = decompressComplzss(payload);
+              log(`Decompressed XNU kernel: ${humanSize(payload.length)}`);
+              krnlSummary = `IM4P + complzss (${humanSize(payload.length)})`;
+            } else if (head4 === 'bvx2' || head4 === 'bvxn') {
+              log('Detected Apple LZFSE (bvx2) unencrypted iOS 12+ kernelcache payload.');
+              krnlSummary = 'IM4P + LZFSE (bvx2, unencrypted)';
+            } else {
+              krnlSummary = `IM4P (${im4p.fourcc})`;
+            }
+          }
+          const banner = extractDarwinBanner(payload);
+          if (banner) log(`\n${banner}`);
+          const m = parseMachO(payload);
+          if (m) {
+            krnlSummary = `${m.arch} XNU Mach-O (${m.segments.length} segs)`;
+            log(`Parsed XNU Mach-O: ${m.arch}, ${m.segments.length} segments, entry 0x${m.entry.toString(16)}`);
+          }
         }
       }
       document.getElementById('stKrnl').textContent = krnlSummary;
@@ -988,7 +1082,7 @@ async function handleFile(file) {
         ['Kernelcache', krnlSummary],
         ['Bootloaders', `${bootloaders.length} images`],
       ].map(([k, v]) => `<div class="ios-row"><span class="k">${k}</span><span class="v">${v}</span></div>`).join('');
-      setStatus(`Loaded iOS ${ver} (${build}) IPSW`, true);
+      if (!activeXnu) setStatus(`Loaded iOS ${ver} (${build}) IPSW`, true);
     } else if (lower.endsWith('.ipa')) {
       const plistEntry = entries.find(e => /^Payload\/[^/]+\.app\/Info\.plist$/.test(e.name));
       if (!plistEntry) throw new Error('No Payload/<App>.app/Info.plist found.');
