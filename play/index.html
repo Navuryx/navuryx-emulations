@@ -195,8 +195,12 @@ const $ = (id) => document.getElementById(id);
 const canvas = $("canvas"), ctx = canvas.getContext("2d");
 $("file").accept = accept();
 $("formats").textContent = "Supported: " + supported_list() + ", or a .zip containing one.";
+const seenConsoles = new Set();
 for (const c of supported_list().split(", ")) {
-  const s = document.createElement("span"); s.className = "chip"; s.textContent = c.replace(/ \(.*\)/, ""); $("consoles").append(s);
+  const label = c.replace(/ \(.*\)/, "");
+  if (seenConsoles.has(label)) continue;
+  seenConsoles.add(label);
+  const s = document.createElement("span"); s.className = "chip"; s.textContent = label; $("consoles").append(s);
 }
 
 let emu = null, running = false, paused = false, image = null, acc = 0, last = 0;
