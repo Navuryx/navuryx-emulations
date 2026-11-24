@@ -6,13 +6,15 @@
 <title>Navuryx Emulations — Multi-System Console Emulator &amp; Virtual Machines</title>
 <meta name="description" content="Navuryx Emulations runs Xbox One / Series X|S, PlayStation 4 &amp; 5, Nintendo Switch, iPhone / iOS, Xbox 360, PS2, classic consoles, and multi-OS virtual machines on custom C++ &amp; Rust cores.">
 <link rel="icon" href="logo.png">
+<link rel="apple-touch-icon" href="logo.png">
+<link rel="manifest" href="manifest.json">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
 <style>
   :root {
-    --primary: #4169E1;
-    --secondary: #7851A9;
-    --bg: #07070b;
+    --primary: #7851A9;
+    --secondary: #4169E1;
+    --bg: #000000;
     --panel: #0e0e15;
     --line: #1d1d29;
     --text: #ececf3;
@@ -110,7 +112,7 @@
         <div class="cta">
           <a class="btn btn-primary" href="https://github.com/Navuryx/navuryx-emulations/releases/latest/download/Navuryx-Emulations-Windows.zip">
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-5-5m5 5 5-5M4 20h16"/></svg>
-            Download for Windows (6.1 MB)
+            Download for Windows (6.2 MB)
           </a>
           <a class="btn btn-ghost" href="play/index.html">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
@@ -120,7 +122,7 @@
             GitHub Releases
           </a>
         </div>
-        <p class="meta">Windows 10 / 11 (64-bit) · Portable zip · Includes Game Dump Helper · <a href="ios.html">iOS Web Runner</a></p>
+        <p class="meta">Windows 10/11 (64-bit) · Linux &amp; macOS source builds · Installable iOS / Android / Console Web PWA · <a href="ios.html">iOS Web Runner</a></p>
       </div>
       <img class="mark" src="logo.png" alt="Navuryx Emulations logo">
     </div>
@@ -188,7 +190,7 @@
       <p class="sub">&nbsp;</p>
       <details><summary>Is it free?</summary><p>Yes. Navuryx Emulations is free for Windows, and includes the WebAssembly browser player and Game Dump Helper.</p></details>
       <details><summary>Where do I get BIOS, keys, or games?</summary><p>Only use games, ROMs, BIOS dumps, keys, firmware (.ipsw), and OS images from hardware you own or that are freely shared by their creators. None are bundled.</p></details>
-      <details><summary>How do Xbox One / Series X|S and PS5 Native vs Emulator modes work?</summary><p>In Settings you can toggle between Emulator mode (runs on our sandboxed x86-64 CPU core) and Native mode (runs decrypted x86-64 executables directly on Windows x64 with DLL redirection, our binary <code>fs:</code> TLS relinker, and clean-room system shims).</p></details>
+      <details><summary>How do Xbox One / Series X|S and PS5 Native vs Emulator modes work?</summary><p>Both Windows desktop editions have experimental launch support for decrypted PS5 ELF/OELF executables and Xbox One / Series X|S game folders. Emulator mode uses the built-in x86-64 CPU core. Native mode runs directly on a Windows x64 host. Commercial game compatibility depends on the graphics and system services each title needs.</p></details>
       <details><summary>Windows SmartScreen says the app is unrecognized</summary><p>Self-signed builds show this warning until signed with an EV certificate. Click <em>More info</em> and then <em>Run anyway</em>.</p></details>
     </div>
   </section>
@@ -196,7 +198,7 @@
   <section class="download">
     <div class="wrap">
       <h2>Ready to play?</h2>
-      <p class="sub" style="margin:0 auto 32px">Navuryx Emulations v0.1.0 for Windows 64-bit · 6.1 MB</p>
+      <p class="sub" style="margin:0 auto 32px">Navuryx Emulations v0.1.0 for Windows 64-bit · 6.2 MB</p>
       <div class="cta" style="justify-content:center">
         <a class="btn btn-primary" href="https://github.com/Navuryx/navuryx-emulations/releases/latest/download/Navuryx-Emulations-Windows.zip">Download Navuryx Emulations</a>
         <a class="btn btn-ghost" href="https://github.com/Navuryx/navuryx-emulations/releases" target="_blank" rel="noopener">All Releases</a>
